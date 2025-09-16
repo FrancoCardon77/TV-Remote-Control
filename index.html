@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Remoto Philips TV</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e1e1e, #2d2d2d);
+            color: white;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 15px;
+            user-select: none;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 380px;
+            margin: 0 auto;
+            background: #333;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 20px;
+            color: #fff;
+        }
+        .status {
+            text-align: center;
+            font-size: 12px;
+            margin-bottom: 20px;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .status.connected { background: #27ae60; }
+        .status.disconnected { background: #e74c3c; }
+        .status.checking { background: #f39c12; }
+        
+        .section {
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-align: center;
+            opacity: 0.8;
+            font-weight: bold;
+        }
+        .btn {
+            background: #555;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 3px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+            min-width: 70px;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn:hover:not(:disabled) {
+            background: #666;
+            transform: translateY(-1px);
+        }
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-loading {
+            background: #f39c12 !important;
+        }
+        
+        /* Colores específicos */
+        .btn-power { background: #e74c3c; }
+        .btn-netflix { background: #e50914; }
+        .btn-youtube { background: #ff0000; }
+        .btn-smart { background: #3498db; }
+        .btn-ok { background: #27ae60; }
+        .btn-vol { background: #f39c12; }
+        
+        .btn-nav {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            margin: 2px;
+        }
+        .nav-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 5px;
+            max-width: 160px;
+            margin: 0 auto;
+            align-items: center;
+        }
+        .nav-center {
+            grid-column: 2;
+            grid-row: 2;
+        }
+        
+        .command-log {
+            background: #222;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            max-height: 120px;
+            overflow-y: auto;
+            border: 1px solid #444;
+        }
+        .log-entry {
+            margin: 3px 0;
+            opacity: 0.9;
+            animation: fadeIn 0.3s ease-in;
+        }
+        .log-success { color: #27ae60; }
+        .log-error { color: #e74c3c; }
+        .log-info { color: #3498db; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 0.9; transform: translateY(0); }
+        }
+        
+        .button-group {
+            text-align: center;
+        }
+        
+        .loading-spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            width: 12px;
+            height: 12px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📺 Control Remoto Philips</h1>
+        <div id="status" class="status checking">
+            <div class="loading-spinner"></div>
+            Verificando conexión...
+        </div>
+        
+        <!-- Power -->
+        <div class="section">
+            <div class="section-title">⚡ Power</div>
+            <div class="button-group">
+                <button class="btn btn-power" data-command="Standby">🔌 Power</button>
+            </div>
+        </div>
+
+        <!-- Apps -->
+        <div class="section">
+            <div class="section-title">📱 Apps</div>
+            <div class="button-group">
+                <button class="btn btn-netflix" data-command="Netflix">Netflix</button>
+                <button class="btn btn-youtube" data-command="YouTube">YouTube</button>
+                <button class="btn btn-smart" data-command="SmartTV">Smart TV</button>
+            </div>
+        </div>
+
+        <!-- Navegación -->
+        <div class="section">
+            <div class="section-title">🧭 Navegación</div>
+            <div class="nav-grid">
+                <div></div>
+                <button class="btn btn-nav" data-command="CursorUp">⬆️</button>
+                <div></div>
+                <button class="btn btn-nav" data-command="CursorLeft">⬅️</button>
+                <button class="btn btn-nav btn-ok nav-center" data-command="Confirm">OK</button>
+                <button class="btn btn-nav" data-command="CursorRight">➡️</button>
+                <div></div>
+                <button class="btn btn-nav" data-command="CursorDown">⬇️</button>
+                <div></div>
+            </div>
+            <div class="button-group" style="margin-top: 10px;">
+                <button class="btn" data-command="Home">🏠 Home</button>
+                <button class="btn" data-command="Back">⬅️ Back</button>
+            </div>
+        </div>
+
+        <!-- Volumen -->
+        <div class="section">
+            <div class="section-title">🔊 Volumen</div>
+            <div class="button-group">
+                <button class="btn btn-vol" data-command="VolumeUp">🔊 +</button>
+                <button class="btn btn-vol" data-command="VolumeDown">🔉 -</button>
+                <button class="btn btn-vol" data-command="Mute">🔇 Mute</button>
+            </div>
+        </div>
+
+        <!-- Reproducción -->
+        <div class="section">
+            <div class="section-title">▶️ Reproducción</div>
+            <div class="button-group">
+                <button class="btn" data-command="Play" style="background: #27ae60;">▶️</button>
+                <button class="btn" data-command="Pause" style="background: #f39c12;">⏸️</button>
+                <button class="btn" data-command="Stop" style="background: #e74c3c;">⏹️</button>
+                <br>
+                <button class="btn" data-command="Rewind">⏪</button>
+                <button class="btn" data-command="FastForward">⏩</button>
+            </div>
+        </div>
+
+        <!-- Menús -->
+        <div class="section">
+            <div class="section-title">⚙️ Menús</div>
+            <div class="button-group">
+                <button class="btn" data-command="Menu">📋 Menu</button>
+                <button class="btn" data-command="Options">⚙️ Options</button>
+                <button class="btn" data-command="Source">📡 Source</button>
+            </div>
+        </div>
+
+        <!-- Colores -->
+        <div class="section">
+            <div class="section-title">🎨 Colores</div>
+            <div class="button-group">
+                <button class="btn" data-command="RedColour" style="background: #e74c3c;">🔴</button>
+                <button class="btn" data-command="GreenColour" style="background: #27ae60;">🟢</button>
+                <button class="btn" data-command="YellowColour" style="background: #f1c40f;">🟡</button>
+                <button class="btn" data-command="BlueColour" style="background: #3498db;">🔵</button>
+            </div>
+        </div>
+
+        <!-- Log -->
+        <div class="command-log" id="commandLog">
+            <div class="log-entry log-info">🚀 Aplicación iniciada...</div>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        let isConnected = false;
+        
+        function addLogEntry(message, type = 'info') {
+            const log = document.getElementById('commandLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+            
+            // Limitar a 50 entradas
+            if (log.children.length > 50) {
+                log.removeChild(log.firstChild);
+            }
+        }
+        
+        function updateStatus(connected, message) {
+            const status = document.getElementById('status');
+            isConnected = connected;
+            
+            if (connected) {
+                status.className = 'status connected';
+                status.innerHTML = `✅ ${message}`;
+            } else {
+                status.className = 'status disconnected';
+                status.innerHTML = `❌ ${message}`;
+            }
+            
+            // Habilitar/deshabilitar botones
+            const buttons = document.querySelectorAll('.btn[data-command]');
+            buttons.forEach(btn => {
+                btn.disabled = !connected;
+            });
+        }
+        
+        async function checkConnection() {
+            try {
+                const result = await ipcRenderer.invoke('check-tv-connection');
+                if (result.connected) {
+                    updateStatus(true, `Conectado a ${result.ip}`);
+                    addLogEntry('✅ Conexión establecida con la TV', 'success');
+                } else {
+                    updateStatus(false, `No se puede conectar a ${result.ip}`);
+                    addLogEntry(`❌ Error de conexión: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                updateStatus(false, 'Error al verificar conexión');
+                addLogEntry(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function sendCommand(command, button) {
+            if (!isConnected) {
+                addLogEntry('❌ TV no conectada', 'error');
+                return;
+            }
+            
+            // UI feedback
+            button.disabled = true;
+            button.classList.add('btn-loading');
+            button.innerHTML = `<div class="loading-spinner"></div>${command}`;
+            
+            try {
+                addLogEntry(`📤 Enviando: ${command}`, 'info');
+                
+                const result = await ipcRenderer.invoke('send-tv-command', command);
+                
+                if (result.success) {
+                    addLogEntry(`✅ ${command} ejecutado exitosamente`, 'success');
+                } else {
+                    addLogEntry(`❌ Error en ${command}: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                addLogEntry(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                // Restaurar botón
+                button.disabled = false;
+                button.classList.remove('btn-loading');
+                // Restaurar texto original basado en data-command
+                const originalTexts = {
+                    'Standby': '🔌 Power',
+                    'Netflix': 'Netflix',
+                    'YouTube': 'YouTube',
+                    'SmartTV': 'Smart TV',
+                    'Home': '🏠 Home',
+                    'Back': '⬅️ Back',
+                    'Confirm': 'OK',
+                    'CursorUp': '⬆️',
+                    'CursorDown': '⬇️',
+                    'CursorLeft': '⬅️',
+                    'CursorRight': '➡️',
+                    'VolumeUp': '🔊 +',
+                    'VolumeDown': '🔉 -',
+                    'Mute': '🔇 Mute',
+                    'Play': '▶️',
+                    'Pause': '⏸️',
+                    'Stop': '⏹️',
+                    'Rewind': '⏪',
+                    'FastForward': '⏩',
+                    'Menu': '📋 Menu',
+                    'Options': '⚙️ Options',
+                    'Source': '📡 Source',
+                    'RedColour': '🔴',
+                    'GreenColour': '🟢',
+                    'YellowColour': '🟡',
+                    'BlueColour': '🔵'
+                };
+                button.innerHTML = originalTexts[command] || command;
+            }
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Verificar conexión inicial
+            checkConnection();
+            
+            // Event listeners para botones
+            document.querySelectorAll('.btn[data-command]').forEach(button => {
+                button.addEventListener('click', () => {
+                    const command = button.getAttribute('data-command');
+                    sendCommand(command, button);
+                });
+            });
+            
+            // Atajos de teclado
+            document.addEventListener('keydown', (event) => {
+                if (!isConnected) return;
+                
+                const keyMap = {
+                    'ArrowUp': 'CursorUp',
+                    'ArrowDown': 'CursorDown',
+                    'ArrowLeft': 'CursorLeft',
+                    'ArrowRight': 'CursorRight',
+                    'Enter': 'Confirm',
+                    ' ': 'Play'
+                };
+                
+                if (keyMap[event.key]) {
+                    event.preventDefault();
+                    const button = document.querySelector(`[data-command="${keyMap[event.key]}"]`);
+                    if (button) {
+                        sendCommand(keyMap[event.key], button);
+                    }
+                }
+            });
+            
+            // Reconectar cada 30 segundos si está desconectado
+            setInterval(() => {
+                if (!isConnected) {
+                    checkConnection();
+                }
+            }, 30000);
+            
+            addLogEntry('🎮 Control remoto listo', 'success');
+        });
+    </script>
+</body>
+</html>
