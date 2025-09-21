@@ -2,6 +2,9 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const http = require('http');
 const path = require('path');
 
+// Variable global para la IP del TV
+const TV_IP = "192.168.1.192";
+
 let mainWindow;
 
 function createWindow() {
@@ -201,7 +204,6 @@ function checkTVConnection(TV_IP) {
 
 // Manejar comandos de TV desde el renderer
 ipcMain.handle('send-tv-command', async (event, command) => {
-  const TV_IP = "192.168.1.191";
   
   // Pequeño delay para evitar spam
   await new Promise(resolve => setTimeout(resolve, 100));
@@ -245,13 +247,11 @@ ipcMain.handle('send-tv-command', async (event, command) => {
 
 // Verificar conectividad con TV
 ipcMain.handle('check-tv-connection', async (event) => {
-  const TV_IP = "192.168.1.191";
   return await checkTVConnection(TV_IP);
 });
 
 // Descubrir comandos disponibles
 ipcMain.handle('discover-commands', async (event) => {
-  const TV_IP = "192.168.1.191";
   
   return new Promise((resolve) => {
     const options = {
